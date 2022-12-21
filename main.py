@@ -1,4 +1,5 @@
-# pip install python-telegram-bot
+#pip3 install python-telegram-bot
+#pip3 install googletrans==4.0.0-rc1
 from telegram.ext import *
 import keys
 import sys
@@ -7,7 +8,7 @@ import pandas as pd
 import datetime
 import pytz
 
-print(f"nauka słowek uruchomiona {datetime.time(hour=11, minute=28)}" )
+print(f"nauka słowek uruchomiona")
 
 def start_command(update, context):
     update.message.reply_text('Siemka! jakie słowka chcesz powtórzyć/dodać?')
@@ -27,16 +28,29 @@ def add_translate(update, context):
         if lang == "pl":
             translated = translator.translate(text, dest='en').text
             update.message.reply_text(f'PL: {text} \nENG: {translated}')
-            data = {'Polski': [text], 'Angielski': [translated]}
-            df = pd.DataFrame(data, columns = ["Polski", "Angielski"])
-            df.to_csv('english_dict.csv', mode='a+', sep=";", index=False, header=False, encoding="UTF-8")
+            
+            df = pd.read_csv("english_dict.csv", encoding="UTF-8", sep=";",  header=None)
+                
+            if translated in df.values:
+                update.message.reply_text(f'{translated} już jest w słowniku!')
+
+            else:
+                data = {'Polski': [text], 'Angielski': [translated]}
+                df = pd.DataFrame(data, columns = ["Polski", "Angielski"])
+                df.to_csv('english_dict.csv', mode='a+', sep=";", index=False, header=False, encoding="UTF-8")
 
         else:
             translated = translator.translate(text, dest='pl').text
             update.message.reply_text(f'ENG: {text} \nPL: {translated}')
-            data = {'Polski': [translated], 'Angielski': [text]}
-            df = pd.DataFrame(data, columns = ["Polski", "Angielski"])
-            df.to_csv('english_dict.csv', mode='a+', sep=";", index=False, header=False, encoding="UTF-8")
+            
+            df = pd.read_csv("english_dict.csv", encoding="UTF-8", sep=";",  header=None)
+            
+            if translated in df.values:
+                update.message.reply_text(f'{translated} już jest w słowniku!')
+            else:
+                data = {'Polski': [translated], 'Angielski': [text]}
+                df = pd.DataFrame(data, columns = ["Polski", "Angielski"])
+                df.to_csv('english_dict.csv', mode='a+', sep=";", index=False, header=False, encoding="UTF-8")
 
 def delete_word(update, context):
     text = update.message.text[5:]
@@ -55,7 +69,7 @@ def show_words(update, context):
         update.message.reply_text(f"MÓJ SŁOWNIK:\n\n" + output)
 
 def send_random_words(context):
-    df = pd.read_csv("english_dict.csv", encoding="UTF-8", header=None)
+    df = pd.read_csv("english_dict.csv", sep=";", encoding="UTF-8", header=None)
     random_words = df.sample()
     output = f"PL: {random_words[0].values[0]}\nENG: {random_words[1].values[0]}"
     context.bot.send_message(chat_id='5644184941', text=f"FISZKA NA DZIŚ:\n\n" + output)
@@ -64,16 +78,29 @@ def start_auto_lessons(update, context):
     chat_id = update.message.chat_id
     # context.job_queue.run_repeating(send_random_words, 5, context=chat_id, name=str(chat_id))
     # context.job_queue.run_once(send_random_words, 3600, context=chat_id)
-    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=8, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_rano") # back - 1 hour
-    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=19, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_wieczor") # back - 1 hour
-
+    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=8, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_1") # back - 1 hour
+    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=11, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_2") # back - 1 hour
+    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=14, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_3") # back - 1 hour
+    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=17, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_4") # back - 1 hour
+    context.job_queue.run_daily(send_random_words, time=datetime.time(hour=20, minute=00), days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name="alert_5") # back - 1 hour
+    
 def stop_auto_lessons(update, context):
     chat_id = update.message.chat_id
     context.bot.send_message(chat_id=chat_id, text='Wyłączam automatyczne fiszki!')
-    job = context.job_queue.get_jobs_by_name("alert_rano")
+    
+    job = context.job_queue.get_jobs_by_name("alert_1")
     job[0].schedule_removal()
 
-    job = context.job_queue.get_jobs_by_name("alert_wieczor")
+    job = context.job_queue.get_jobs_by_name("alert_2")
+    job[0].schedule_removal()
+    
+    job = context.job_queue.get_jobs_by_name("alert_3")
+    job[0].schedule_removal()
+
+    job = context.job_queue.get_jobs_by_name("alert_4")
+    job[0].schedule_removal()
+    
+    job = context.job_queue.get_jobs_by_name("alert_5")
     job[0].schedule_removal()
 
 
